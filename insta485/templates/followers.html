@@ -1,16 +1,24 @@
 {% extends "base.html" %}
 
 {% block content %}
+    <span> Followers</span>
     {% for follower in followers %}
         <div>
-            <img src="{{ follower.user_img_url }}" alt="image">
             <a href="/users/{{ follower.username }}/">{{ follower.username }}</a>
-            {% if follower.username == logname %}
-                <span></span>
-            {% elif follower.logname_follows_username %}
-                <span>following</span>
+            <img src="/uploads/{{ follower.url }}">
+            <span>{{ follower.is_following }}</span>
+            {% if follower.is_following == "following"%}
+                <form action="/following/?target=/users/{{ follower.username }}/followers/" method="post" enctype="multipart/form-data">
+                    <input type="submit" name="unfollow" value="unfollow"/>
+                    <input type="hidden" name="username" value="{{ follower.username }}"/>
+                    <input type="hidden" name="operation" value="unfollow"/>
+                </form>
             {% else %}
-                <span>not following</span>
+                <form action="/following/?target=/users/{{ follower.username }}/followers/" method="post" enctype="multipart/form-data">
+                    <input type="submit" name="follow" value="follow"/>
+                    <input type="hidden" name="username" value="{{ follower.username }}"/>
+                    <input type="hidden" name="operation" value="follow"/>
+                </form>
             {% endif %}
         </div>
     {% endfor %}
