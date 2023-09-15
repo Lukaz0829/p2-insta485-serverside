@@ -85,3 +85,70 @@ def show_index():
         "posts": posts
     }
     return flask.render_template("index.html", **context)
+
+@insta485.app.route('/users/<user_url_slug>/')
+def show_user(user_url_slug):
+
+    connection = insta485.model.get_db()
+
+    logname = "awdeorio"
+
+    context = {}
+    user_data = connection.execute(
+        "SELECT username, fullname FROM users WHERE username = ?",
+        (user_url_slug, )
+    ).fetchone()
+
+    # if user_data is None:
+    #     flask.abort(404)
+    context["logname"] = logname
+    context["username"] = user_data["username"]
+    context["fullname"] = user_data["fullname"]
+
+    following = connection.execute(
+        "SELECT * FROM following WHERE username1 = ? AND username2 = ?",
+        (logname, user_url_slug)
+    )
+    following = following.fetchone()
+    if logname == user_url_slug:
+        context["following"] = ""
+    elif following:
+        context["following"] = "following"
+    else:
+        context["following"] = "not following"
+    
+    posts = connection.execute(
+        "SELECT * FROM posts WHERE owner = ?",
+        (user_url_slug, )
+    )
+    posts = posts.fetchall()
+    context["num_posts"] = len(posts)
+
+    followers = connection.execute(
+        "SELECT * FROM following WHERE username2 = ?",
+        (user_url_slug, )
+    )
+    followers = followers.fetchall()
+    context["num_followers"] = len(followers)
+
+    following = connection.execute(
+        "SELECT * FROM following WHERE username1 = ?",
+        (user_url_slug, )
+    )
+    following = following.fetchall()
+    context["num_following"] = len(following)
+
+    posts = connection.execute(
+        "SELECT postid, filename FROM posts WHERE owner = ?",
+        (user_url_slug, )
+    )
+    posts = posts.fetchall()
+    context["posts"] = posts
+
+    print(context["posts"])
+    
+
+
+    
+    
+    return flask.render_template("user.html", **context)

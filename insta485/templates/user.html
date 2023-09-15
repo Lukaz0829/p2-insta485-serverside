@@ -2,11 +2,43 @@
 
 {% block content %}
     <span>{{ username }}</span>
-    <span>Relationship {{ 'following' if logname_follows_username else 'not following' }}</span>
-    <span>Posts {{ total_posts }} post{{ 's' if total_posts != 1 else '' }}</span>
-    <a href="/users/{{ username }}/{{ followers }}/">Followers {{ followers }} follower{{ 's' if followers != 1 else '' }}</a>
-    <a href="/users/{{ username }}/{{ following }}/">Following {{ following }} following</a>
+    <span>{{ fullname }}</span>
+    <span>Relationship {{ following }}</span>
+    {% if following %}
+        <form action="/following/?target=/users/{{ username }}/" method="post" enctype="multipart/form-data">
+            <input type="submit" name="unfollow" value="unfollow"/>
+            <input type="hidden" name="username" value="{{ username }}"/>
+            <input type="hidden" name="operation" value="unfollow"/>
+        </form>
+    {% else %}
+        <form action="/following/?target=/users/{{ username }}/" method="post" enctype="multipart/form-data">
+            <input type="submit" name="follow" value="follow"/>
+            <input type="hidden" name="username" value="{{ username }}"/>
+            <input type="hidden" name="operation" value="follow"/>
+        </form>
+    {% endif %}
+    <span>Posts {{ num_posts }} post{{ 's' if total_posts != 1 else '' }}</span>
+    <a href="/users/{{ username }}/followers/">{{ num_followers }} follower{{ 's' if followers != 1 else '' }}</a>
+    <a href="/users/{{ username }}/following/">{{ num_following }} following</a>
+
+    {% if num_posts == 0 %}
+        <span>No posts yet.</span>
+    {% else %}
     {% for post in posts %}
-        <a href="/posts/{{ post.postid }}/"><img src="{{ post.img_url }}" alt="image"></a>
-    {% endfor %}
+        <a href="/posts/{{ post.postid }}/"><img src="/uploads/{{ post.filename }}" alt="image"></a>
+        {% endfor %}
+    {% endif %}
+    {% if username == logname %}
+        <a href="/accounts/edit/">Edit profile</a>
+
+        <form action="/accounts/logout/" method="post" enctype="multipart/form-data">
+            <input type="submit" name="logout" value="Logout"/>
+        </form>
+
+        <form action="/posts/?target=/users/{{ username }}/" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept="image/*" required/>
+            <input type="submit" name="create_post" value="upload new post"/>
+            <input type="hidden" name="operation" value="create"/>
+        </form>
+    {% endif %}
 {% endblock %}
