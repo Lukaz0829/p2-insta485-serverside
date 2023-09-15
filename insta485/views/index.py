@@ -198,3 +198,53 @@ def show_followers(user_url_slug):
     context["logname"] = logname
 
     return flask.render_template("followers.html", **context)
+
+@insta485.app.route('/users/<user_url_slug>/following/')
+def show_following(user_url_slug):
+    connection = insta485.model.get_db()
+    logname = "awdeorio"
+
+    context = {}
+
+    user_data = connection.execute(
+        "SELECT username FROM users WHERE username = ?",
+        (user_url_slug,)
+    )
+    user_data = user_data.fetchone()
+
+    if user_data is None:
+        flask.abort(404)
+
+    following = connection.execute(
+        "SELECT username2 FROM following WHERE username1 = ?",
+        (user_url_slug,)
+    )
+    following = following.fetchall()
+
+    following_data = []
+    for user in following:
+        username2 = user["username2"]
+
+        is_following = connection.execute(
+            "SELECT * FROM following WHERE username1 = ? AND username2 = ?",
+            (logname, username2)
+        )
+        is_following = is_following.fetchone()
+
+        pic = connection.execute(
+            "SELECT filename FROM users WHERE username = ?", 
+            (username2, )
+        )
+        pic = pic.fetchone()
+
+        if is_following:
+            status = "following"
+        else:
+            status = "not following"
+
+        following_data.append({'username': username2, 'is_following': status, 'url': pic['filename']})
+
+    context["following_users"] = following_data
+    context["logname"] = logname
+
+    return flask.render_template("following.html", **context)
