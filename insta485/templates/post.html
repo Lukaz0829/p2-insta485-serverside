@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div>
+        <span>{{logname}}</span>
+        <span>{{postid}}</span>
+        <span>{{owner}}</span>
+        <img src="{{ owner_img_url }}" alt="image">
+        <span>{{timestamp}}</span>
+        <img src="{{ img_url }}" alt="image">
+        <span>Likes {{ likes }} like{{ 's' if likes != 1 else '' }}</span>
+        <div class="comments">
+            {% for comment in comments %}
+                <a href="/users/{{ comment.owner }}/">{{ comment.owner }}</a>
+                <span>{{ comment.text }}</span>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

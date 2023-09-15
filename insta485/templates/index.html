@@ -1,9 +1,19 @@
-<!DOCTYPE html>
-<html lang="en">
-<body>
-  <h1>Users</h1>
-  {% for user in users %}
-  <p>{{user.username}} {{user.fullname}}</p>
-  {% endfor %}
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block content %}
+    {% for post in posts %}
+        <div>
+            <a href="/posts/{{ post.postid }}/">Timestamp {{ post.timestamp }}</a>
+            <a href="/users/{{ post.owner }}/">{{ post.owner }}</a>
+            <a href="/users/{{ post.owner }}/"><img src="{{ post.owner_img_url }}" alt="img"></a>
+            <span>Likes {{ post.likes }} like{{ 's' if post.likes != 1 else '' }}</span>
+            <img src="{{ post.img_url }}" alt="image">
+            <div class="comments">
+                {% for comment in post.comments %}
+                    <a href="/users/{{ comment.owner }}/">{{ comment.owner }}</a>
+                    <span>{{ comment.text }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <span>{{ username }}</span>
+    <span>Relationship {{ 'following' if logname_follows_username else 'not following' }}</span>
+    <span>Posts {{ total_posts }} post{{ 's' if total_posts != 1 else '' }}</span>
+    <a href="/users/{{ username }}/{{ followers }}/">Followers {{ followers }} follower{{ 's' if followers != 1 else '' }}</a>
+    <a href="/users/{{ username }}/{{ following }}/">Following {{ following }} following</a>
+    {% for post in posts %}
+        <a href="/posts/{{ post.postid }}/"><img src="{{ post.img_url }}" alt="image"></a>
+    {% endfor %}
+{% endblock %}
