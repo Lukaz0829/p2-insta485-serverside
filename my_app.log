@@ -1,0 +1,21 @@
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 258-949-038
+INFO:werkzeug: * Detected change in '/Users/lucassun/Desktop/EECS 485/p2-insta485-serverside/insta485/views/index.py', reloading
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 258-949-038
+INFO:werkzeug:127.0.0.1 - - [15/Sep/2023 14:41:02] "[35m[1mGET / HTTP/1.1[0m" 500 -
+INFO:werkzeug:127.0.0.1 - - [15/Sep/2023 14:41:02] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [15/Sep/2023 14:41:02] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [15/Sep/2023 14:41:02] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [15/Sep/2023 14:41:02] "[36mGET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+INFO:werkzeug: * Detected change in '/Users/lucassun/Desktop/EECS 485/p2-insta485-serverside/insta485/views/index.py', reloading
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 258-949-038
+DEBUG:root:Users fetched from database: [{'username': 'jflinn', 'fullname': 'Jason Flinn'}, {'username': 'michjc', 'fullname': 'Michael Cafarella'}, {'username': 'jag', 'fullname': 'H.V. Jagadish'}]
+INFO:werkzeug:127.0.0.1 - - [15/Sep/2023 14:41:12] "GET / HTTP/1.1" 200 -
+DEBUG:root:Users fetched from database: [{'username': 'jflinn', 'fullname': 'Jason Flinn'}, {'username': 'michjc', 'fullname': 'Michael Cafarella'}, {'username': 'jag', 'fullname': 'H.V. Jagadish'}]
+INFO:werkzeug:127.0.0.1 - - [15/Sep/2023 14:41:26] "GET / HTTP/1.1" 200 -
+INFO:werkzeug: * Detected change in '/Users/lucassun/Desktop/EECS 485/p2-insta485-serverside/insta485/views/index.py', reloading
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 258-949-038
+INFO:werkzeug: * Detected change in '/Users/lucassun/Desktop/EECS 485/p2-insta485-serverside/insta485/views/__init__.py', reloading
