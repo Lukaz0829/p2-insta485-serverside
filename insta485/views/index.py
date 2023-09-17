@@ -78,7 +78,6 @@ def show_index():
 
         time = arrow.get(post['created']).to('US/Eastern')
         post['created'] = time.humanize()
-        # print(posts)
 
     context = {
         "users": users,
@@ -249,6 +248,63 @@ def show_following(user_url_slug):
 
     return flask.render_template("following.html", **context)
 
+@insta485.app.route('/posts/<postid_url_slug>/')
+def show_post(postid_url_slug):
+    connection = insta485.model.get_db()
+    logname = "awdeorio"
+
+    post = connection.execute(
+        "SELECT * FROM posts WHERE postid = ?",
+        (postid_url_slug, )
+    )
+    post = post.fetchone()
+
+    # if post is None:
+    #     flask.abort(404, "Post not found")
+
+    owner = connection.execute(
+        "SELECT filename FROM users WHERE username = ?", 
+        (post['owner'], )
+    )
+    owner = owner.fetchone()
+
+    # if owner is None:
+    #     flask.abort(404, "Owner not found")
+
+    likes = connection.execute(
+        "SELECT * FROM likes WHERE postid = ?", 
+        (postid_url_slug, )
+    )
+    likes = likes.fetchall()
+    
+    current_liked = connection.execute(
+        "SELECT * FROM likes WHERE postid = ? AND owner = ?", 
+        (postid_url_slug, logname)
+    )
+    current_liked = current_liked.fetchone()
+
+    comments = connection.execute(
+        "SELECT owner, text FROM comments WHERE postid = ? ORDER BY created ASC", 
+        (postid_url_slug, )
+    )
+    comments = comments.fetchall()
+
+    humanized_time = arrow.get(post['created']).to('US/Eastern').humanize()
+
+    context = {
+        'logname': logname,
+        'postid': postid_url_slug,
+        'owner': post['owner'],
+        'post': post,
+        'likes': len(likes),
+        'current_liked': current_liked,
+        'comments': comments,
+        'owner_img_url': owner['filename'],
+        'humanized_time': humanized_time
+    }
+
+    return flask.render_template('post.html', **context)
+
 @insta485.app.route('/explore/')
 def show_explore():
     connection = insta485.model.get_db()
@@ -371,3 +427,31 @@ def auth():
         return '', 200
     else:
         flask.abort(403)
+
+@insta485.app.route('/likes/', methods=['POST'])
+def like_unlike_post():
+    # Check if the user is logged in
+    username = "awdeorio"
+    if 'username' not in flask.session:
+        flask.abort(403)
+    
+    username = flask.session['username']
+    postid = flask.request.form.get('postid')
+    operation = flask.request.form.get('operation')
+    target = flask.request.args.get('target', '/')
+    
+    connection = insta485.model.get_db()
+    if operation == 'like':
+        connection.execute(
+            "INSERT INTO likes (owner, postid) VALUES (?, ?)",
+            (username, postid)
+        )
+    elif operation == 'unlike':
+        connection.execute(
+            "DELETE FROM likes WHERE owner = ? AND postid = ?",
+            (username, postid)
+        )
+    else:
+        flask.abort(400)
+    
+    return flask.redirect(target)
