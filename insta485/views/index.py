@@ -307,3 +307,73 @@ def login_page():
 def logout():
     flask.session.pop('username', None)
     return flask.redirect('/accounts/login/')
+
+@insta485.app.route('/accounts/create/', methods=['GET'])
+def create_account():
+    if 'username' in flask.session:  # Redirect to /accounts/edit/ if logged in
+        return flask.redirect('/accounts/edit/')
+        
+    if flask.request.method == 'POST':
+        file = flask.request.files['file']
+        fullname = flask.request.form['fullname']
+        username = flask.request.form['username']
+        email = flask.request.form['email']
+        password = flask.request.form['password']
+
+        # Validate and save the data here
+        # ...
+
+        # Redirect to index after successful account creation
+        return flask.redirect('/')
+
+    return flask.render_template('create_account.html')
+
+@insta485.app.route('/accounts/edit/')
+def edit_account():
+    if 'username' not in flask.session:
+        return flask.redirect('/accounts/login/')
+    
+    username = flask.session['username']
+
+    connection = insta485.model.get_db()
+
+    context = {}
+
+    user_detail = connection.execute(
+        "SELECT * FROM users WHERE username = ?",
+        (username, )
+    )
+    user_detail = user_detail.fetchone()
+
+    context = {"user_detail": user_detail}
+
+    
+    return flask.render_template('edit_account.html', **context)
+
+@insta485.app.route('/accounts/delete/', methods=['GET'])
+def delete_account():
+    if 'username' not in flask.session:  # Redirect to login if not logged in
+        return flask.redirect('/accounts/login/')
+        
+    if flask.request.method == 'POST':
+        flask.session.pop('username', None)
+        
+        # Redirect to account creation page after deletion
+        return flask.redirect('/accounts/create/')
+
+    username = flask.session['username']
+    return flask.render_template('delete_account.html', username=username)
+
+@insta485.app.route('/accounts/password/')
+def change_password():
+    if 'username' not in flask.session:
+        return flask.redirect('/accounts/login/')
+    
+    return flask.render_template('change_password.html')
+
+@insta485.app.route('/accounts/auth/')
+def auth():
+    if 'username' in flask.session:
+        return '', 200
+    else:
+        flask.abort(403)
