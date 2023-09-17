@@ -310,7 +310,7 @@ def logout():
 
 @insta485.app.route('/accounts/create/', methods=['GET'])
 def create_account():
-    if 'username' in flask.session:  # Redirect to /accounts/edit/ if logged in
+    if 'username' in flask.session: 
         return flask.redirect('/accounts/edit/')
         
     if flask.request.method == 'POST':
@@ -320,10 +320,6 @@ def create_account():
         email = flask.request.form['email']
         password = flask.request.form['password']
 
-        # Validate and save the data here
-        # ...
-
-        # Redirect to index after successful account creation
         return flask.redirect('/')
 
     return flask.render_template('create_account.html')
@@ -352,13 +348,11 @@ def edit_account():
 
 @insta485.app.route('/accounts/delete/', methods=['GET'])
 def delete_account():
-    if 'username' not in flask.session:  # Redirect to login if not logged in
+    if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
         
     if flask.request.method == 'POST':
         flask.session.pop('username', None)
-        
-        # Redirect to account creation page after deletion
         return flask.redirect('/accounts/create/')
 
     username = flask.session['username']
