@@ -297,3 +297,13 @@ def show_explore():
 
     return flask.render_template("explore.html", **context)
 
+@insta485.app.route('/accounts/login/', methods=['GET'])
+def login_page():
+    if 'username' in flask.session:
+        return flask.redirect('/')
+    return flask.render_template('login.html')
+
+@insta485.app.route('/accounts/logout/', methods=['POST'])
+def logout():
+    flask.session.pop('username', None)
+    return flask.redirect('/accounts/login/')
