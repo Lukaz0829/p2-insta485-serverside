@@ -431,11 +431,10 @@ def auth():
 @insta485.app.route('/likes/', methods=['POST'])
 def like_unlike_post():
     # Check if the user is logged in
+    print("Got called")
     username = "awdeorio"
-    if 'username' not in flask.session:
-        flask.abort(403)
     
-    username = flask.session['username']
+    # username = flask.session['username']
     postid = flask.request.form.get('postid')
     operation = flask.request.form.get('operation')
     target = flask.request.args.get('target', '/')
