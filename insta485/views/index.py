@@ -353,7 +353,7 @@ def show_explore():
 
     return flask.render_template("explore.html", **context)
 
-@insta485.app.route('/accounts/login/', methods=['GET'])
+@insta485.app.route('/accounts/login/')
 def login_page():
     if 'username' in flask.session:
         return flask.redirect('/')
@@ -430,8 +430,6 @@ def auth():
 
 @insta485.app.route('/likes/', methods=['POST'])
 def like_unlike_post():
-    # Check if the user is logged in
-    print("Got called")
     username = "awdeorio"
     
     # username = flask.session['username']
@@ -453,4 +451,44 @@ def like_unlike_post():
     else:
         flask.abort(400)
     
+    return flask.redirect(target)
+
+@insta485.app.route('/comments/', methods=['POST'])
+def handle_comments():
+
+    username = "awdeorio"
+    # if 'username' not in flask.session:
+    #     flask.abort(403)
+
+    # username = flask.session['username']
+    operation = flask.request.form.get('operation')
+    postid = flask.request.form.get('postid')
+    commentid = flask.request.form.get('commentid')
+    text = flask.request.form.get('text')
+    target = flask.request.args.get('target', '/')
+
+    connection = insta485.model.get_db()
+
+    if operation == 'create':
+        if not text:
+            flask.abort(400)
+        connection.execute(
+            "INSERT INTO comments (owner, postid, text) VALUES (?, ?, ?)",
+            (username, postid, text)
+        )
+    elif operation == 'delete':
+        comment_owner = connection.execute(
+            "SELECT owner FROM comments WHERE commentid = ?",
+            (commentid,)
+        )
+        comment_owner = comment_owner.fetchone()
+        
+        if comment_owner and comment_owner['owner'] == username:
+            connection.execute(
+                "DELETE FROM comments WHERE commentid = ?",
+                (commentid,)
+            )
+        else:
+            flask.abort(403)
+
     return flask.redirect(target)
