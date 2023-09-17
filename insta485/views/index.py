@@ -256,24 +256,44 @@ def show_explore():
 
     context = {}
 
-    not_following = connection.execute(
-        "SELECT username, filename FROM users WHERE username NOT IN "
-        "(SELECT username2 FROM following WHERE username1 = ?) AND username != ?",
-        (logname, logname)
+    all_users = connection.execute(
+        "SELECT username FROM users WHERE username != ?",
+        (logname, )
     )
-    not_following = not_following.fetchall()
+    all_users = all_users.fetchall()
+
+    following_users = connection.execute(
+        "SELECT username2 FROM following WHERE username1 = ?",
+        (logname,)
+    )
+    following_users = following_users.fetchall()
+
+    following = set()
+    for user in following_users:
+        following.add(user['username2'])
+    not_following = []
+
+    for user in all_users:
+        username = user['username']
+        if username not in following:
+            not_following.append(user)
 
     data = []
     for user in not_following:
+        user_data = connection.execute(
+            "SELECT username, filename FROM users WHERE username = ?",
+            (user['username'], )
+        )
+        user_data = user_data.fetchone()
         data.append({
-            'username': user['username'],
-            'user_img_url': user['filename']
+            'username': user_data['username'],
+            'user_img_url': user_data['filename']
         })
-
     context = {
         'logname': logname,
         'not_following': data
     }
+    print("Context is ")
 
-    return flask.render_template("following.html", **context)
+    return flask.render_template("explore.html", **context)
 
