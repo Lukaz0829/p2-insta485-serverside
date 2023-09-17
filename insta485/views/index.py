@@ -248,3 +248,32 @@ def show_following(user_url_slug):
     context["logname"] = logname
 
     return flask.render_template("following.html", **context)
+
+@insta485.app.route('/explore/')
+def show_explore():
+    connection = insta485.model.get_db()
+    logname = "awdeorio"
+
+    context = {}
+
+    not_following = connection.execute(
+        "SELECT username, filename FROM users WHERE username NOT IN "
+        "(SELECT username2 FROM following WHERE username1 = ?) AND username != ?",
+        (logname, logname)
+    )
+    not_following = not_following.fetchall()
+
+    data = []
+    for user in not_following:
+        data.append({
+            'username': user['username'],
+            'user_img_url': user['filename']
+        })
+
+    context = {
+        'logname': logname,
+        'not_following': data
+    }
+
+    return flask.render_template("following.html", **context)
+
