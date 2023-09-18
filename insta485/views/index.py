@@ -9,7 +9,9 @@ import insta485
 import arrow
 import uuid
 import pathlib
+import hashlib
 
+insta485.app.secret_key = 'your_secret_key_here'
 
 @insta485.app.route('/')
 def show_index():
@@ -19,7 +21,9 @@ def show_index():
     connection = insta485.model.get_db()
 
     # Query database
-    logname = "awdeorio"
+    if 'username' not in flask.session:
+        return flask.redirect('/accounts/login/')
+    logname = flask.session['username']
     users = connection.execute(
         "SELECT username, fullname "
         "FROM users "
@@ -92,7 +96,9 @@ def show_user(user_url_slug):
 
     connection = insta485.model.get_db()
 
-    logname = "awdeorio"
+    if 'username' not in flask.session:
+        return flask.redirect('/accounts/login/')
+    logname = flask.session['username']
 
     context = {}
     user_data = connection.execute(
@@ -152,8 +158,9 @@ def show_user(user_url_slug):
 def show_followers(user_url_slug):
     # Initialize database connection
     connection = insta485.model.get_db()
-
-    logname = "awdeorio"
+    if 'username' not in flask.session:
+        return flask.redirect('/accounts/login/')
+    logname = flask.session['username']
 
     context = {}
 
@@ -203,7 +210,9 @@ def show_followers(user_url_slug):
 @insta485.app.route('/users/<user_url_slug>/following/')
 def show_following(user_url_slug):
     connection = insta485.model.get_db()
-    logname = "awdeorio"
+    if 'username' not in flask.session:
+        return flask.redirect('/accounts/login/')
+    logname = flask.session['username']
 
     context = {}
 
@@ -253,7 +262,9 @@ def show_following(user_url_slug):
 @insta485.app.route('/posts/<postid_url_slug>/')
 def show_post(postid_url_slug):
     connection = insta485.model.get_db()
-    logname = "awdeorio"
+    if 'username' not in flask.session:
+        return flask.redirect('/accounts/login/')
+    logname = flask.session['username']
 
     post = connection.execute(
         "SELECT * FROM posts WHERE postid = ?",
@@ -261,8 +272,8 @@ def show_post(postid_url_slug):
     )
     post = post.fetchone()
 
-    # if post is None:
-    #     flask.abort(404, "Post not found")
+    if post is None:
+        flask.abort(404)
 
     owner = connection.execute(
         "SELECT filename FROM users WHERE username = ?", 
@@ -351,7 +362,6 @@ def show_explore():
         'logname': logname,
         'not_following': data
     }
-    print("Context is ")
 
     return flask.render_template("explore.html", **context)
 
@@ -363,7 +373,7 @@ def login_page():
 
 @insta485.app.route('/accounts/logout/', methods=['POST'])
 def logout():
-    flask.session.pop('username', None)
+    flask.session.clear()
     return flask.redirect('/accounts/login/')
 
 @insta485.app.route('/accounts/create/', methods=['GET'])
@@ -596,3 +606,84 @@ def handle_following():
         flask.abort(400)
 
     return flask.redirect(target)
+
+@insta485.app.route('/accounts/', methods=['POST'])
+def accounts_post():
+
+    operation = flask.request.form.get('operation')
+    target = flask.request.args.get('target', '/')
+    connection = insta485.model.get_db()
+    username = flask.request.form.get('username')
+
+    if operation == 'login':
+        password = flask.request.form.get('password')
+        if not username or not password:
+            flask.abort(400)
+        save_password = connection.execute(
+            "SELECT password FROM users WHERE username = ?", (username, )
+        )
+        save_password = save_password.fetchone()
+        if not save_password:
+            flask.abort(403)
+        else:
+            save_password = save_password['password']
+            if password == save_password:
+                flask.session['username'] = username
+                return flask.redirect(target)
+            else:
+                flask.abort(403)
+    
+    elif operation == "create":
+        password = flask.request.form.get('password')
+        fullname = flask.request.form.get('fullname')
+        email = flask.request.form.get('email')
+        file = flask.request.files['file']
+
+        if not username or not password or not fullname or not email or not file:
+            flask.abort(400)
+
+        user = connection.execute(
+            "SELECT username FROM users WHERE username = ?", (username,)
+        )
+        user = user.fetchone()
+        if user:
+            flask.abort(409)
+
+        fileobj = flask.request.files["file"]
+        filename = fileobj.filename
+        stem = uuid.uuid4().hex
+        suffix = pathlib.Path(filename).suffix.lower()
+        uuid_basename = f"{stem}{suffix}"
+        path = insta485.app.config["UPLOAD_FOLDER"] / uuid_basename
+        fileobj.save(path)
+
+        algorithm = 'sha512'
+        salt = uuid.uuid4().hex
+        hash_obj = hashlib.new(algorithm)
+        password_salted = salt + password
+        hash_obj.update(password_salted.encode('utf-8'))
+        password_hash = hash_obj.hexdigest()
+        password_db_string = "$".join([algorithm, salt, password_hash])
+        print(password_db_string)
+
+        connection.execute(
+            "INSERT INTO users (username, fullname, email, filename, password) VALUES (?, ?, ?, ?, ?)",
+            (username, fullname, email, uuid_basename, password_db_string)
+        )
+
+        flask.session['username'] = username
+        return flask.redirect(target)
+
+    elif operation == 'delete':
+        username = flask.session['username']
+        if 'username' not in flask.session:
+            flask.abort(403)
+        connection.execute(
+            "DELETE FROM users WHERE username = ?",
+            (username, )
+        )
+
+        flask.session.clear()
+        return flask.redirect(target)
+    else:
+        flask.abort(400)
