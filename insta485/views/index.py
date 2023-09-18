@@ -7,6 +7,8 @@ URLs include:
 import flask
 import insta485
 import arrow
+import uuid
+import pathlib
 
 
 @insta485.app.route('/')
@@ -491,4 +493,68 @@ def handle_comments():
         else:
             flask.abort(403)
 
+    return flask.redirect(target)
+
+@insta485.app.route('/posts/', methods=['POST'])
+def handle_posts():
+    username = "awdeorio"
+    # username = flask.session['username']
+    operation = flask.request.form.get('operation')
+    postid = flask.request.form.get('postid')
+    target = flask.request.args.get('target', f'/users/{username}/')
+
+    connection = insta485.model.get_db()
+
+    # <!-- DO NOT CHANGE THIS (aside from where we say 'FIXME') -->
+    # <form action="<FIXME_POSTS_URL_HERE>?target=<FIXME_CURRENT_PAGE_URL_HERE>" method="post" enctype="multipart/form-data">
+    # <input type="file" name="file" accept="image/*" required/>
+    # <input type="submit" name="create_post" value="upload new post"/>
+    # <input type="hidden" name="operation" value="create"/>
+    # </form>
+
+    if operation == 'create':
+        fileobj = flask.request.files.get("file")
+        if not fileobj:
+            flask.abort(400)
+
+        filename = fileobj.filename
+        stem = uuid.uuid4().hex
+        suffix = pathlib.Path(filename).suffix.lower()
+        uuid_basename = f"{stem}{suffix}"
+
+        path = insta485.app.config["UPLOAD_FOLDER"] / uuid_basename
+        fileobj.save(path)
+        # print("File name is ")
+        # print(filename)
+        # print(uuid_basename)
+        connection.execute(
+            "INSERT INTO posts (filename, owner) VALUES (?, ?)",
+            (uuid_basename, username)
+        )
+    elif operation == 'delete':
+        owner = connection.execute(
+            "SELECT owner FROM posts WHERE postid = ?",
+            (postid, )
+        )
+        owner = owner.fetchone()
+        
+        if owner and owner['owner'] == username:
+            post = connection.execute(
+                "SELECT filename FROM posts WHERE postid = ?",
+                (postid, )
+            )
+            post = post.fetchone()
+            path = insta485.app.config["UPLOAD_FOLDER"] / post['filename']
+            if path.exists():
+                path.unlink()
+
+            connection.execute(
+                "DELETE FROM posts WHERE postid = ?",
+                (postid, )
+            )
+        else:
+            flask.abort(403)
+    else:
+        flask.abort(400)
+    
     return flask.redirect(target)
