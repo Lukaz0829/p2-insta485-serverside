@@ -321,7 +321,9 @@ def show_post(postid_url_slug):
 @insta485.app.route('/explore/')
 def show_explore():
     connection = insta485.model.get_db()
-    logname = "awdeorio"
+    if 'username' not in flask.session:
+        return flask.redirect('/accounts/login/')
+    logname = flask.session['username']
 
     context = {}
 
@@ -571,11 +573,9 @@ def handle_posts():
 
 @insta485.app.route('/following/', methods=['POST'])
 def handle_following():
-    logname = "awdeorio"
-    # if 'username' not in flask.session:
-    #     flask.abort(403)
-
-    # logname = flask.session['username']
+    if 'username' not in flask.session:
+        return flask.redirect('/accounts/login/')
+    logname = flask.session['username']
     username = flask.request.form.get('username')
     operation = flask.request.form.get('operation')
     target = flask.request.args.get('target', '/')
@@ -627,10 +627,29 @@ def accounts_post():
             flask.abort(403)
         else:
             save_password = save_password['password']
-            if password == save_password:
+            split = save_password.split("$")
+            if(len(split)<3):
+                if password == save_password:
+                    flask.session['username'] = username
+                    return flask.redirect(target)
+                else:
+                    print("passwords dosent match")
+                    flask.abort(403)
+            algorithm, salt, saved_password_hash = save_password.split("$")
+            hash_obj = hashlib.new(algorithm)
+            password_salted = salt + password
+            hash_obj.update(password_salted.encode('utf-8'))
+            current_password_hash = hash_obj.hexdigest()
+
+            print("Checking if password match")
+            print(f"pass word is {password}")
+            print(f"save pass word is {save_password}")
+            
+            if saved_password_hash == current_password_hash:
                 flask.session['username'] = username
                 return flask.redirect(target)
             else:
+                print("passwords dosent match")
                 flask.abort(403)
     
     elif operation == "create":
@@ -684,6 +703,73 @@ def accounts_post():
         )
 
         flask.session.clear()
+        return flask.redirect(target)
+    elif operation == 'edit_account':
+        if 'username' not in flask.session:
+            flask.abort(403)
+        fullname = flask.request.form.get('fullname')
+        email = flask.request.form.get('email')
+        file = flask.request.files.get('file')
+        if not fullname or not email:
+            flask.abort(400)
+        if file:
+            fileobj = flask.request.files["file"]
+            filename = fileobj.filename
+            stem = uuid.uuid4().hex
+            suffix = pathlib.Path(filename).suffix.lower()
+            uuid_basename = f"{stem}{suffix}"
+            path = insta485.app.config["UPLOAD_FOLDER"] / uuid_basename
+            fileobj.save(path)
+
+            connection.execute(
+                "UPDATE users SET fullname = ?, email = ?, filename = ? WHERE username = ?",
+                (fullname, email, uuid_basename, flask.session['username'])
+            )
+        else:
+            connection.execute(
+                "UPDATE users SET fullname = ?, email = ? WHERE username = ?",
+                (fullname, email, flask.session['username'])
+            )
+        return flask.redirect(target)
+    elif operation == 'update_password':
+        if 'username' not in flask.session:
+            flask.abort(403)
+
+        password = flask.request.form.get('password')
+        new_password1 = flask.request.form.get('new_password1')
+        new_password2 = flask.request.form.get('new_password2')
+        
+        if not password or not new_password1 or not new_password2:
+            flask.abort(400)
+        saved_password = connection.execute(
+        "SELECT password FROM users WHERE username = ?", 
+            (flask.session['username'],)
+        )
+        saved_password = saved_password.fetchone()
+        if not saved_password:
+            flask.abort(404)
+        else:
+            saved_password = saved_password['password']
+        print(saved_password)
+        if saved_password != password:
+            flask.abort(403)
+        if new_password1 != new_password2:
+            flask.abort(401)
+        algorithm = 'sha512'
+        salt = uuid.uuid4().hex
+        hash_obj = hashlib.new(algorithm)
+        password_salted = salt + new_password1
+        hash_obj.update(password_salted.encode('utf-8'))
+        password_hash = hash_obj.hexdigest()
+        password_db_string = "$".join([algorithm, salt, password_hash])
+        print(password_db_string)
+
+        # Update the password in the database
+        connection.execute(
+            "UPDATE users SET password = ? WHERE username = ?",
+            (password_db_string, flask.session['username'])
+        )
+        print("End")
         return flask.redirect(target)
     else:
         flask.abort(400)
