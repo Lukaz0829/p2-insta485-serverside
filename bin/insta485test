@@ -1,0 +1,10 @@
+#!/bin/bash
+
+
+set -Eexuo pipefail
+
+pycodestyle insta485
+pydocstyle insta485
+pylint insta485
+
+pytest -v tests

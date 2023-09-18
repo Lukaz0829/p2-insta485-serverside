@@ -444,20 +444,31 @@ def auth():
 
 @insta485.app.route('/likes/', methods=['POST'])
 def like_unlike_post():
-    username = "awdeorio"
+    if 'username' not in flask.session:
+        return flask.redirect('/accounts/login/')
+    username = flask.session['username']
     
-    # username = flask.session['username']
     postid = flask.request.form.get('postid')
     operation = flask.request.form.get('operation')
     target = flask.request.args.get('target', '/')
     
     connection = insta485.model.get_db()
+    likes = connection.execute(
+        "SELECT * FROM likes WHERE owner = ? AND postid = ?",
+        (username, postid)
+    )
+    likes = likes.fetchone()
+    print(likes)
     if operation == 'like':
+        if likes:
+            flask.abort(409)
         connection.execute(
             "INSERT INTO likes (owner, postid) VALUES (?, ?)",
             (username, postid)
         )
     elif operation == 'unlike':
+        if not likes:
+            flask.abort(409)
         connection.execute(
             "DELETE FROM likes WHERE owner = ? AND postid = ?",
             (username, postid)
@@ -470,11 +481,10 @@ def like_unlike_post():
 @insta485.app.route('/comments/', methods=['POST'])
 def handle_comments():
 
-    username = "awdeorio"
-    # if 'username' not in flask.session:
-    #     flask.abort(403)
+    if 'username' not in flask.session:
+        return flask.redirect('/accounts/login/')
+    username = flask.session['username']
 
-    # username = flask.session['username']
     operation = flask.request.form.get('operation')
     postid = flask.request.form.get('postid')
     commentid = flask.request.form.get('commentid')
@@ -509,20 +519,14 @@ def handle_comments():
 
 @insta485.app.route('/posts/', methods=['POST'])
 def handle_posts():
-    username = "awdeorio"
-    # username = flask.session['username']
+    if 'username' not in flask.session:
+        return flask.redirect('/accounts/login/')
+    username = flask.session['username']
     operation = flask.request.form.get('operation')
     postid = flask.request.form.get('postid')
     target = flask.request.args.get('target', f'/users/{username}/')
 
     connection = insta485.model.get_db()
-
-    # <!-- DO NOT CHANGE THIS (aside from where we say 'FIXME') -->
-    # <form action="<FIXME_POSTS_URL_HERE>?target=<FIXME_CURRENT_PAGE_URL_HERE>" method="post" enctype="multipart/form-data">
-    # <input type="file" name="file" accept="image/*" required/>
-    # <input type="submit" name="create_post" value="upload new post"/>
-    # <input type="hidden" name="operation" value="create"/>
-    # </form>
 
     if operation == 'create':
         fileobj = flask.request.files.get("file")
@@ -536,9 +540,6 @@ def handle_posts():
 
         path = insta485.app.config["UPLOAD_FOLDER"] / uuid_basename
         fileobj.save(path)
-        # print("File name is ")
-        # print(filename)
-        # print(uuid_basename)
         connection.execute(
             "INSERT INTO posts (filename, owner) VALUES (?, ?)",
             (uuid_basename, username)

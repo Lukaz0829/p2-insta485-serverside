@@ -174,6 +174,7 @@ def test_insta485test():
 
 def assert_is_shell_script(path):
     """Assert path is an executable shell script."""
+    print(path)
     assert os.path.isfile(path)
     output = subprocess.run(
         ["file", path],
