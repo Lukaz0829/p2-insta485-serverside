@@ -18,7 +18,6 @@ INSERT INTO posts(postid, filename, owner) VALUES
 INSERT INTO following(username1, username2) VALUES
 ('awdeorio', 'jflinn'),
 ('awdeorio', 'michjc'),
-('awdeorio', 'jag'),
 ('jflinn', 'awdeorio'),
 ('jflinn', 'michjc'),
 ('michjc', 'awdeorio'),

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <span> Followers</span>
+    <span>Followers</span>
     {% for follower in followers %}
         <div>
             <a href="/users/{{ follower.username }}/">{{ follower.username }}</a>

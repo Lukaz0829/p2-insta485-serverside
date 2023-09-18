@@ -558,3 +558,41 @@ def handle_posts():
         flask.abort(400)
     
     return flask.redirect(target)
+
+@insta485.app.route('/following/', methods=['POST'])
+def handle_following():
+    logname = "awdeorio"
+    # if 'username' not in flask.session:
+    #     flask.abort(403)
+
+    # logname = flask.session['username']
+    username = flask.request.form.get('username')
+    operation = flask.request.form.get('operation')
+    target = flask.request.args.get('target', '/')
+
+    connection = insta485.model.get_db()
+
+    following = connection.execute(
+        "SELECT * FROM following WHERE username1 = ? AND username2 = ?",
+        (logname, username)
+    )
+    following = following.fetchone()
+
+    if operation == 'follow':
+        if following:
+            flask.abort(409)
+        connection.execute(
+            "INSERT INTO following (username1, username2) VALUES (?, ?)",
+            (logname, username)
+        )
+    elif operation == 'unfollow':
+        if not following:
+            flask.abort(409)
+        connection.execute(
+            "DELETE FROM following WHERE username1 = ? AND username2 = ?",
+            (logname, username)
+        )
+    else:
+        flask.abort(400)
+
+    return flask.redirect(target)
