@@ -723,7 +723,8 @@ def accounts_post():
             fileobj.save(path)
 
             connection.execute(
-                "UPDATE users SET fullname = ?, email = ?, filename = ? WHERE username = ?",
+                "UPDATE users SET fullname = ?, email = ?, filename = ? "
+                "WHERE username = ?",
                 (fullname, email, uuid_basename, flask.session['username'])
             )
         else:
@@ -739,11 +740,11 @@ def accounts_post():
         password = flask.request.form.get('password')
         new_password1 = flask.request.form.get('new_password1')
         new_password2 = flask.request.form.get('new_password2')
-        
+
         if not password or not new_password1 or not new_password2:
             flask.abort(400)
         saved_password = connection.execute(
-        "SELECT password FROM users WHERE username = ?", 
+            "SELECT password FROM users WHERE username = ?",
             (flask.session['username'],)
         )
         saved_password = saved_password.fetchone()
