@@ -82,6 +82,7 @@ def test_files(client, noauth):
         assert response.status_code == 302
 
     # Load images
+    print(client)
     response = client.get(
         "/uploads/122a7d27ca1d7420a1072f695d9290fad4501a41.jpg"
     )
