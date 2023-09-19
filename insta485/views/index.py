@@ -84,6 +84,7 @@ def show_index():
         post['created'] = time.humanize()
 
     context = {
+        "logname": logname,
         "users": users,
         "posts": posts
     }
@@ -404,9 +405,7 @@ def edit_account():
         return flask.redirect('/accounts/login/')
 
     username = flask.session['username']
-
     connection = insta485.model.get_db()
-
     context = {}
 
     user_detail = connection.execute(
@@ -414,8 +413,8 @@ def edit_account():
         (username, )
     )
     user_detail = user_detail.fetchone()
-
-    context = {"user_detail": user_detail}
+    context = {"user_detail": user_detail,
+               "logname": username}
     return flask.render_template('edit_account.html', **context)
 
 
@@ -428,9 +427,8 @@ def delete_account():
     if flask.request.method == 'POST':
         flask.session.pop('username', None)
         return flask.redirect('/accounts/create/')
-
-    username = flask.session['username']
-    return flask.render_template('delete_account.html', username=username)
+    context = {"logname": flask.session['username']}
+    return flask.render_template('delete_account.html', **context)
 
 
 @insta485.app.route('/accounts/password/')
@@ -438,8 +436,8 @@ def change_password():
     """Missing docstring."""
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
-
-    return flask.render_template('change_password.html')
+    context = {"logname": flask.session['username']}
+    return flask.render_template('change_password.html', **context)
 
 
 @insta485.app.route('/accounts/auth/')

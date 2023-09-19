@@ -5,7 +5,7 @@
     {% for following in following_users %}
         <div>
             <a href="/users/{{ following.username }}/">{{ following.username }}</a>
-            <img src="/uploads/{{ following.url }}">
+            <img src="/uploads/{{ following.url }}" alt="img">
             <span>{{ following.is_following }}</span>
             {% if following.is_following == "following"%}
                 <form action="/following/?target=/users/{{ following.username }}/following/" method="post" enctype="multipart/form-data">

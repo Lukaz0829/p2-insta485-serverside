@@ -5,7 +5,7 @@
     {% for follower in followers %}
         <div>
             <a href="/users/{{ follower.username }}/">{{ follower.username }}</a>
-            <img src="/uploads/{{ follower.url }}">
+            <img src="/uploads/{{ follower.url }}" alt="img">
             <span>{{ follower.is_following }}</span>
             {% if follower.is_following == "following"%}
                 <form action="/following/?target=/users/{{ follower.username }}/followers/" method="post" enctype="multipart/form-data">

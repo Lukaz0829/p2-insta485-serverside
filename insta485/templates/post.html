@@ -2,7 +2,7 @@
 
 {% block content %}
     <div>
-        <a href="/posts/{{ postid }}">Timestamp {{ humanized_time }}</a>
+        <a href="/posts/{{ postid }}/">Timestamp {{ humanized_time }}</a>
         <a href="/users/{{ owner }}/">{{ owner }}</a>
         <a href="/users/{{ owner }}/"><img src="/uploads/{{ owner_img_url }}" alt="img"></a>
         <span>Likes {{ likes }} like{{ 's' if likes != 1 else '' }}</span>

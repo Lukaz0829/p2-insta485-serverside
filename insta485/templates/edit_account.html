@@ -9,8 +9,8 @@
     <!-- DO NOT CHANGE THIS (aside from where we say 'FIXME') -->
     <form action="/accounts/edit/?target=/accounts/edit/" method="post" enctype="multipart/form-data">
       <input type="file" name="file" accept="image/*"/>
-      <input type="text" name="fullname" value="{{ user_details.fullname }}" required/>
-      <input type="text" name="email" value="{{ user_details.email }}" required/>
+      <input type="text" name="fullname" value="{{ user_detail.fullname }}" required/>
+      <input type="text" name="email" value="{{ user_detail.email }}" required/>
       <input type="submit" name="update" value="submit"/>
       <input type="hidden" name="operation" value="edit_account"/>
     </form>
