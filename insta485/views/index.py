@@ -4,12 +4,12 @@ Insta485 index (main) view.
 URLs include:
 /
 """
-import flask
-import insta485
-import arrow
 import uuid
 import pathlib
 import hashlib
+import arrow
+import flask
+import insta485
 
 insta485.app.secret_key = 'your_secret_key_here'
 
@@ -32,7 +32,7 @@ def show_index():
     )
     users = users.fetchall()
 
-    following_posts = (
+    posts = (
         "SELECT p.postid, p.filename, p.owner, p.created "
         "FROM posts p "
         "JOIN following f ON f.username1 = ? AND f.username2 = p.owner "
@@ -42,7 +42,7 @@ def show_index():
         "FROM posts p "
         "WHERE p.owner = ? "
     )
-    final_query = f"{following_posts} UNION {user_posts} ORDER BY created DESC"
+    final_query = f"{posts} UNION {user_posts} ORDER BY created DESC"
 
     posts = connection.execute(final_query, (logname, logname))
     posts = posts.fetchall()
@@ -53,21 +53,21 @@ def show_index():
         print(post_owner)
 
         owner = connection.execute(
-            "SELECT filename FROM users WHERE username = ?", 
+            "SELECT filename FROM users WHERE username = ?",
             (post_owner,)
         )
         owner = owner.fetchone()
         post['owner_img_url'] = owner['filename']
 
         likes = connection.execute(
-            "SELECT * FROM likes WHERE postid = ?", 
+            "SELECT * FROM likes WHERE postid = ?",
             (post_id,)
         )
         likes = likes.fetchall()
         post['likes'] = len(likes)
 
         current_liked = connection.execute(
-            "SELECT * FROM likes WHERE postid = ? AND owner = ?", 
+            "SELECT * FROM likes WHERE postid = ? AND owner = ?",
             (post_id, logname)
         )
         if current_liked:
@@ -76,7 +76,7 @@ def show_index():
             post['current_liked'] = False
 
         comments = connection.execute(
-            "SELECT owner, text FROM comments WHERE postid = ? ORDER BY created ASC", 
+            "SELECT owner, text FROM comments WHERE postid = ? ORDER BY created ASC",
             (post_id,)
         )
         comments = comments.fetchall()
@@ -93,6 +93,7 @@ def show_index():
 
 @insta485.app.route('/users/<user_url_slug>/')
 def show_user(user_url_slug):
+    """Missing docstring."""
 
     connection = insta485.model.get_db()
 
@@ -123,7 +124,7 @@ def show_user(user_url_slug):
         context["following"] = "following"
     else:
         context["following"] = "not following"
-    
+
     posts = connection.execute(
         "SELECT * FROM posts WHERE owner = ?",
         (user_url_slug, )
@@ -156,7 +157,7 @@ def show_user(user_url_slug):
 
 @insta485.app.route('/users/<user_url_slug>/followers/')
 def show_followers(user_url_slug):
-    # Initialize database connection
+    """Missing docstring."""
     connection = insta485.model.get_db()
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
@@ -190,17 +191,18 @@ def show_followers(user_url_slug):
         following = following.fetchone()
 
         pic = connection.execute(
-            "SELECT filename FROM users WHERE username = ?", 
+            "SELECT filename FROM users WHERE username = ?",
             (username1, )
         )
         pic = pic.fetchone()
 
-        if(following):
+        if following:
             is_following = "following"
         else:
             is_following = "not following"
 
-        follower_data.append({'username': username1, 'is_following': is_following, 'url': pic['filename']})
+        follower_data.append({'username': username1,
+                              'is_following': is_following, 'url': pic['filename']})
 
     context["followers"] = follower_data
     context["logname"] = logname
@@ -209,6 +211,7 @@ def show_followers(user_url_slug):
 
 @insta485.app.route('/users/<user_url_slug>/following/')
 def show_following(user_url_slug):
+    """Missing docstring."""
     connection = insta485.model.get_db()
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
@@ -242,7 +245,7 @@ def show_following(user_url_slug):
         is_following = is_following.fetchone()
 
         pic = connection.execute(
-            "SELECT filename FROM users WHERE username = ?", 
+            "SELECT filename FROM users WHERE username = ?",
             (username2, )
         )
         pic = pic.fetchone()
@@ -252,7 +255,8 @@ def show_following(user_url_slug):
         else:
             status = "not following"
 
-        following_data.append({'username': username2, 'is_following': status, 'url': pic['filename']})
+        following_data.append({'username': username2,
+                               'is_following': status, 'url': pic['filename']})
 
     context["following_users"] = following_data
     context["logname"] = logname
@@ -261,6 +265,7 @@ def show_following(user_url_slug):
 
 @insta485.app.route('/posts/<postid_url_slug>/')
 def show_post(postid_url_slug):
+    """Missing docstring."""
     connection = insta485.model.get_db()
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
@@ -276,7 +281,7 @@ def show_post(postid_url_slug):
         flask.abort(404)
 
     owner = connection.execute(
-        "SELECT filename FROM users WHERE username = ?", 
+        "SELECT filename FROM users WHERE username = ?",
         (post['owner'], )
     )
     owner = owner.fetchone()
@@ -285,19 +290,19 @@ def show_post(postid_url_slug):
     #     flask.abort(404, "Owner not found")
 
     likes = connection.execute(
-        "SELECT * FROM likes WHERE postid = ?", 
+        "SELECT * FROM likes WHERE postid = ?",
         (postid_url_slug, )
     )
     likes = likes.fetchall()
-    
+
     current_liked = connection.execute(
-        "SELECT * FROM likes WHERE postid = ? AND owner = ?", 
+        "SELECT * FROM likes WHERE postid = ? AND owner = ?",
         (postid_url_slug, logname)
     )
     current_liked = current_liked.fetchone()
 
     comments = connection.execute(
-        "SELECT owner, text FROM comments WHERE postid = ? ORDER BY created ASC", 
+        "SELECT owner, text FROM comments WHERE postid = ? ORDER BY created ASC",
         (postid_url_slug, )
     )
     comments = comments.fetchall()
@@ -320,11 +325,11 @@ def show_post(postid_url_slug):
 
 @insta485.app.route('/explore/')
 def show_explore():
+    """Missing docstring."""
     connection = insta485.model.get_db()
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
     logname = flask.session['username']
-
     context = {}
 
     all_users = connection.execute(
@@ -369,36 +374,31 @@ def show_explore():
 
 @insta485.app.route('/accounts/login/')
 def login_page():
+    """Missing docstring."""
     if 'username' in flask.session:
         return flask.redirect('/')
     return flask.render_template('login.html')
 
 @insta485.app.route('/accounts/logout/', methods=['POST'])
 def logout():
+    """Missing docstring."""
     flask.session.clear()
     return flask.redirect('/accounts/login/')
 
 @insta485.app.route('/accounts/create/', methods=['GET'])
 def create_account():
-    if 'username' in flask.session: 
+    """Missing docstring."""
+    if 'username' in flask.session:
         return flask.redirect('/accounts/edit/')
-        
-    if flask.request.method == 'POST':
-        file = flask.request.files['file']
-        fullname = flask.request.form['fullname']
-        username = flask.request.form['username']
-        email = flask.request.form['email']
-        password = flask.request.form['password']
-
-        return flask.redirect('/')
 
     return flask.render_template('create_account.html')
 
 @insta485.app.route('/accounts/edit/')
 def edit_account():
+    """Missing docstring."""
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
-    
+
     username = flask.session['username']
 
     connection = insta485.model.get_db()
@@ -413,14 +413,15 @@ def edit_account():
 
     context = {"user_detail": user_detail}
 
-    
+
     return flask.render_template('edit_account.html', **context)
 
 @insta485.app.route('/accounts/delete/', methods=['GET'])
 def delete_account():
+    """Missing docstring."""
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
-        
+
     if flask.request.method == 'POST':
         flask.session.pop('username', None)
         return flask.redirect('/accounts/create/')
@@ -430,28 +431,30 @@ def delete_account():
 
 @insta485.app.route('/accounts/password/')
 def change_password():
+    """Missing docstring."""
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
-    
+
     return flask.render_template('change_password.html')
 
 @insta485.app.route('/accounts/auth/')
 def auth():
+    """Missing docstring."""
     if 'username' in flask.session:
         return '', 200
-    else:
-        flask.abort(403)
+    flask.abort(403)
 
 @insta485.app.route('/likes/', methods=['POST'])
 def like_unlike_post():
+    """Missing docstring."""
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
     username = flask.session['username']
-    
+
     postid = flask.request.form.get('postid')
     operation = flask.request.form.get('operation')
     target = flask.request.args.get('target', '/')
-    
+
     connection = insta485.model.get_db()
     likes = connection.execute(
         "SELECT * FROM likes WHERE owner = ? AND postid = ?",
@@ -475,11 +478,12 @@ def like_unlike_post():
         )
     else:
         flask.abort(400)
-    
+
     return flask.redirect(target)
 
 @insta485.app.route('/comments/', methods=['POST'])
 def handle_comments():
+    """Missing docstring."""
 
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
@@ -506,7 +510,7 @@ def handle_comments():
             (commentid,)
         )
         comment_owner = comment_owner.fetchone()
-        
+
         if comment_owner and comment_owner['owner'] == username:
             connection.execute(
                 "DELETE FROM comments WHERE commentid = ?",
@@ -519,6 +523,7 @@ def handle_comments():
 
 @insta485.app.route('/posts/', methods=['POST'])
 def handle_posts():
+    """Missing docstring."""
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
     username = flask.session['username']
@@ -550,7 +555,7 @@ def handle_posts():
             (postid, )
         )
         owner = owner.fetchone()
-        
+
         if owner and owner['owner'] == username:
             post = connection.execute(
                 "SELECT filename FROM posts WHERE postid = ?",
@@ -569,11 +574,12 @@ def handle_posts():
             flask.abort(403)
     else:
         flask.abort(400)
-    
+
     return flask.redirect(target)
 
 @insta485.app.route('/following/', methods=['POST'])
 def handle_following():
+    """Missing docstring."""
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
     logname = flask.session['username']
@@ -610,6 +616,7 @@ def handle_following():
 
 @insta485.app.route('/accounts/', methods=['POST'])
 def accounts_post():
+    """Missing docstring."""
 
     operation = flask.request.form.get('operation')
     target = flask.request.args.get('target', '/')
@@ -626,33 +633,24 @@ def accounts_post():
         save_password = save_password.fetchone()
         if not save_password:
             flask.abort(403)
-        else:
-            save_password = save_password['password']
-            split = save_password.split("$")
-            if(len(split)<3):
-                if password == save_password:
-                    flask.session['username'] = username
-                    return flask.redirect(target)
-                else:
-                    print("passwords dosent match")
-                    flask.abort(403)
-            algorithm, salt, saved_password_hash = save_password.split("$")
-            hash_obj = hashlib.new(algorithm)
-            password_salted = salt + password
-            hash_obj.update(password_salted.encode('utf-8'))
-            current_password_hash = hash_obj.hexdigest()
-
-            print("Checking if password match")
-            print(f"pass word is {password}")
-            print(f"save pass word is {save_password}")
-            
-            if saved_password_hash == current_password_hash:
+        save_password = save_password['password']
+        if len(save_password.split("$"))<3:
+            if password == save_password:
                 flask.session['username'] = username
                 return flask.redirect(target)
-            else:
-                print("passwords dosent match")
-                flask.abort(403)
-    
+            flask.abort(403)
+        algorithm, salt, saved_password_hash = save_password.split("$")
+        hash_obj = hashlib.new(algorithm)
+        password_salted = salt + password
+        hash_obj.update(password_salted.encode('utf-8'))
+        current_password_hash = hash_obj.hexdigest()
+
+        if saved_password_hash == current_password_hash:
+            flask.session['username'] = username
+            return flask.redirect(target)
+        print("passwords dosent match")
+        flask.abort(403)
+
     elif operation == "create":
         password = flask.request.form.get('password')
         fullname = flask.request.form.get('fullname')
@@ -668,7 +666,6 @@ def accounts_post():
         user = user.fetchone()
         if user:
             flask.abort(409)
-
         fileobj = flask.request.files["file"]
         filename = fileobj.filename
         stem = uuid.uuid4().hex
@@ -687,7 +684,8 @@ def accounts_post():
         print(password_db_string)
 
         connection.execute(
-            "INSERT INTO users (username, fullname, email, filename, password) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO users (username, fullname, email, filename, password) "
+            "VALUES (?, ?, ?, ?, ?)",
             (username, fullname, email, uuid_basename, password_db_string)
         )
 

@@ -24,7 +24,7 @@ def get_post(postid_url_slug):
         "owner": "awdeorio",
         "ownerImgUrl": "/uploads/e1a7c5c32973862ee15173b0259e3efdb6a391af.jpg",
         "ownerShowUrl": "/users/awdeorio/",
-        "postid": "/posts/{}/".format(postid_url_slug),
+        "postid": f"/posts/{postid_url_slug}/",
         "url": flask.request.path,
     }
     return flask.jsonify(**context)
