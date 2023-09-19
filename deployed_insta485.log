@@ -1,0 +1,19 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying 13.58.174.85:80...
+* Connected to ec2-13-58-174-85.us-east-2.compute.amazonaws.com (13.58.174.85) port 80 (#0)
+> GET /accounts/login/ HTTP/1.1
+> Host: ec2-13-58-174-85.us-east-2.compute.amazonaws.com
+> User-Agent: curl/8.0.1
+> Accept: */*
+> 
+< HTTP/1.1 200 OK
+< Server: nginx/1.18.0 (Ubuntu)
+< Date: Tue, 19 Sep 2023 22:48:01 GMT
+< Content-Type: text/html; charset=utf-8
+< Content-Length: 597
+< Connection: keep-alive
+< 
+{ [597 bytes data]
+100   597  100   597    0     0   5512      0 --:--:-- --:--:-- --:--:--  5970
+* Connection #0 to host ec2-13-58-174-85.us-east-2.compute.amazonaws.com left intact
