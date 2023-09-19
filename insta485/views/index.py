@@ -13,14 +13,11 @@ import insta485
 
 insta485.app.secret_key = 'your_secret_key_here'
 
+
 @insta485.app.route('/')
 def show_index():
     """Display / route."""
-
-    # Connect to database
     connection = insta485.model.get_db()
-
-    # Query database
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
     logname = flask.session['username']
@@ -76,7 +73,8 @@ def show_index():
             post['current_liked'] = False
 
         comments = connection.execute(
-            "SELECT owner, text FROM comments WHERE postid = ? ORDER BY created ASC",
+            "SELECT owner, text FROM comments WHERE postid = ? "
+            "ORDER BY created ASC",
             (post_id,)
         )
         comments = comments.fetchall()
@@ -91,10 +89,10 @@ def show_index():
     }
     return flask.render_template("index.html", **context)
 
+
 @insta485.app.route('/users/<user_url_slug>/')
 def show_user(user_url_slug):
     """Missing docstring."""
-
     connection = insta485.model.get_db()
 
     if 'username' not in flask.session:
@@ -155,6 +153,7 @@ def show_user(user_url_slug):
 
     return flask.render_template("user.html", **context)
 
+
 @insta485.app.route('/users/<user_url_slug>/followers/')
 def show_followers(user_url_slug):
     """Missing docstring."""
@@ -202,12 +201,14 @@ def show_followers(user_url_slug):
             is_following = "not following"
 
         follower_data.append({'username': username1,
-                              'is_following': is_following, 'url': pic['filename']})
+                              'is_following': is_following,
+                              'url': pic['filename']})
 
     context["followers"] = follower_data
     context["logname"] = logname
 
     return flask.render_template("followers.html", **context)
+
 
 @insta485.app.route('/users/<user_url_slug>/following/')
 def show_following(user_url_slug):
@@ -263,6 +264,7 @@ def show_following(user_url_slug):
 
     return flask.render_template("following.html", **context)
 
+
 @insta485.app.route('/posts/<postid_url_slug>/')
 def show_post(postid_url_slug):
     """Missing docstring."""
@@ -285,10 +287,6 @@ def show_post(postid_url_slug):
         (post['owner'], )
     )
     owner = owner.fetchone()
-
-    # if owner is None:
-    #     flask.abort(404, "Owner not found")
-
     likes = connection.execute(
         "SELECT * FROM likes WHERE postid = ?",
         (postid_url_slug, )
@@ -302,7 +300,8 @@ def show_post(postid_url_slug):
     current_liked = current_liked.fetchone()
 
     comments = connection.execute(
-        "SELECT owner, text FROM comments WHERE postid = ? ORDER BY created ASC",
+        "SELECT owner, text FROM comments WHERE postid = ? "
+        "ORDER BY created ASC",
         (postid_url_slug, )
     )
     comments = comments.fetchall()
@@ -322,6 +321,7 @@ def show_post(postid_url_slug):
     }
 
     return flask.render_template('post.html', **context)
+
 
 @insta485.app.route('/explore/')
 def show_explore():
@@ -372,6 +372,7 @@ def show_explore():
 
     return flask.render_template("explore.html", **context)
 
+
 @insta485.app.route('/accounts/login/')
 def login_page():
     """Missing docstring."""
@@ -379,11 +380,13 @@ def login_page():
         return flask.redirect('/')
     return flask.render_template('login.html')
 
+
 @insta485.app.route('/accounts/logout/', methods=['POST'])
 def logout():
     """Missing docstring."""
     flask.session.clear()
     return flask.redirect('/accounts/login/')
+
 
 @insta485.app.route('/accounts/create/', methods=['GET'])
 def create_account():
@@ -392,6 +395,7 @@ def create_account():
         return flask.redirect('/accounts/edit/')
 
     return flask.render_template('create_account.html')
+
 
 @insta485.app.route('/accounts/edit/')
 def edit_account():
@@ -412,9 +416,8 @@ def edit_account():
     user_detail = user_detail.fetchone()
 
     context = {"user_detail": user_detail}
-
-
     return flask.render_template('edit_account.html', **context)
+
 
 @insta485.app.route('/accounts/delete/', methods=['GET'])
 def delete_account():
@@ -429,6 +432,7 @@ def delete_account():
     username = flask.session['username']
     return flask.render_template('delete_account.html', username=username)
 
+
 @insta485.app.route('/accounts/password/')
 def change_password():
     """Missing docstring."""
@@ -437,12 +441,14 @@ def change_password():
 
     return flask.render_template('change_password.html')
 
+
 @insta485.app.route('/accounts/auth/')
 def auth():
     """Missing docstring."""
     if 'username' in flask.session:
         return '', 200
     flask.abort(403)
+
 
 @insta485.app.route('/likes/', methods=['POST'])
 def like_unlike_post():
@@ -481,10 +487,10 @@ def like_unlike_post():
 
     return flask.redirect(target)
 
+
 @insta485.app.route('/comments/', methods=['POST'])
 def handle_comments():
     """Missing docstring."""
-
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
     username = flask.session['username']
@@ -520,6 +526,7 @@ def handle_comments():
             flask.abort(403)
 
     return flask.redirect(target)
+
 
 @insta485.app.route('/posts/', methods=['POST'])
 def handle_posts():
@@ -577,6 +584,7 @@ def handle_posts():
 
     return flask.redirect(target)
 
+
 @insta485.app.route('/following/', methods=['POST'])
 def handle_following():
     """Missing docstring."""
@@ -614,10 +622,106 @@ def handle_following():
 
     return flask.redirect(target)
 
+
+def login(username, password, connection, target):
+    """Missing docstring."""
+    save_password = connection.execute(
+        "SELECT password FROM users WHERE username = ?", (username, )
+    )
+    save_password = save_password.fetchone()
+    if not save_password:
+        flask.abort(403)
+    save_password = save_password['password']
+    if len(save_password.split("$")) < 3:
+        if password == save_password:
+            flask.session['username'] = username
+            return flask.redirect(target)
+        flask.abort(403)
+    algorithm, salt, saved_password_hash = save_password.split("$")
+    hash_obj = hashlib.new(algorithm)
+    password_salted = salt + password
+    hash_obj.update(password_salted.encode('utf-8'))
+    current_password_hash = hash_obj.hexdigest()
+
+    if saved_password_hash == current_password_hash:
+        flask.session['username'] = username
+        return flask.redirect(target)
+    print("passwords dosent match")
+    flask.abort(403)
+
+
+def get_password(password):
+    """Missing docstring."""
+    algorithm = 'sha512'
+    salt = uuid.uuid4().hex
+    hash_obj = hashlib.new(algorithm)
+    password_salted = salt + password
+    hash_obj.update(password_salted.encode('utf-8'))
+    password_hash = hash_obj.hexdigest()
+    password_db_string = "$".join([algorithm, salt, password_hash])
+    return password_db_string
+
+
+def upload():
+    """Missing docstring."""
+    fileobj = flask.request.files["file"]
+    filename = fileobj.filename
+    stem = uuid.uuid4().hex
+    suffix = pathlib.Path(filename).suffix.lower()
+    uuid_basename = f"{stem}{suffix}"
+    path = insta485.app.config["UPLOAD_FOLDER"] / uuid_basename
+    fileobj.save(path)
+    return uuid_basename
+
+
+def create(username, password, target, fullname, email):
+    """Missing docstring."""
+    connection = insta485.model.get_db()
+    password_db_string = get_password(password)
+    uuid_basename = upload()
+    connection.execute(
+        "INSERT INTO users (username, fullname, email, filename, password) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (username, fullname, email, uuid_basename, password_db_string)
+    )
+
+    flask.session['username'] = username
+    return flask.redirect(target)
+
+
+def update(connection, password, new_password1, new_password2, target):
+    """Missing docstring."""
+    saved_password = connection.execute(
+        "SELECT password FROM users WHERE username = ?",
+        (flask.session['username'],)
+    )
+    saved_password = saved_password.fetchone()
+    if not saved_password:
+        flask.abort(404)
+    else:
+        saved_password = saved_password['password']
+    if saved_password != password or new_password1 != new_password2:
+        flask.abort(403)
+    password_db_string = get_password(new_password1)
+
+    connection.execute(
+        "UPDATE users SET password = ? WHERE username = ?",
+        (password_db_string, flask.session['username'])
+    )
+    return flask.redirect(target)
+
+
+def get_username():
+    """Missing docstring."""
+    username = flask.session['username']
+    if 'username' not in flask.session:
+        flask.abort(403)
+    return username
+
+
 @insta485.app.route('/accounts/', methods=['POST'])
 def accounts_post():
     """Missing docstring."""
-
     operation = flask.request.form.get('operation')
     target = flask.request.args.get('target', '/')
     connection = insta485.model.get_db()
@@ -627,75 +731,21 @@ def accounts_post():
         password = flask.request.form.get('password')
         if not username or not password:
             flask.abort(400)
-        save_password = connection.execute(
-            "SELECT password FROM users WHERE username = ?", (username, )
-        )
-        save_password = save_password.fetchone()
-        if not save_password:
-            flask.abort(403)
-        save_password = save_password['password']
-        if len(save_password.split("$"))<3:
-            if password == save_password:
-                flask.session['username'] = username
-                return flask.redirect(target)
-            flask.abort(403)
-        algorithm, salt, saved_password_hash = save_password.split("$")
-        hash_obj = hashlib.new(algorithm)
-        password_salted = salt + password
-        hash_obj.update(password_salted.encode('utf-8'))
-        current_password_hash = hash_obj.hexdigest()
+        return login(username, password, connection, target)
 
-        if saved_password_hash == current_password_hash:
-            flask.session['username'] = username
-            return flask.redirect(target)
-        print("passwords dosent match")
-        flask.abort(403)
-
-    elif operation == "create":
+    if operation == "create":
         password = flask.request.form.get('password')
         fullname = flask.request.form.get('fullname')
         email = flask.request.form.get('email')
         file = flask.request.files['file']
 
-        if not username or not password or not fullname or not email or not file:
+        if (not username or not password or
+                not fullname or not email or not file):
             flask.abort(400)
+        return create(username, password, target, fullname, email)
 
-        user = connection.execute(
-            "SELECT username FROM users WHERE username = ?", (username,)
-        )
-        user = user.fetchone()
-        if user:
-            flask.abort(409)
-        fileobj = flask.request.files["file"]
-        filename = fileobj.filename
-        stem = uuid.uuid4().hex
-        suffix = pathlib.Path(filename).suffix.lower()
-        uuid_basename = f"{stem}{suffix}"
-        path = insta485.app.config["UPLOAD_FOLDER"] / uuid_basename
-        fileobj.save(path)
-
-        algorithm = 'sha512'
-        salt = uuid.uuid4().hex
-        hash_obj = hashlib.new(algorithm)
-        password_salted = salt + password
-        hash_obj.update(password_salted.encode('utf-8'))
-        password_hash = hash_obj.hexdigest()
-        password_db_string = "$".join([algorithm, salt, password_hash])
-        print(password_db_string)
-
-        connection.execute(
-            "INSERT INTO users (username, fullname, email, filename, password) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (username, fullname, email, uuid_basename, password_db_string)
-        )
-
-        flask.session['username'] = username
-        return flask.redirect(target)
-
-    elif operation == 'delete':
-        username = flask.session['username']
-        if 'username' not in flask.session:
-            flask.abort(403)
+    if operation == 'delete':
+        username = get_username()
         connection.execute(
             "DELETE FROM users WHERE username = ?",
             (username, )
@@ -703,23 +753,15 @@ def accounts_post():
 
         flask.session.clear()
         return flask.redirect(target)
-    elif operation == 'edit_account':
-        if 'username' not in flask.session:
-            flask.abort(403)
+    if operation == 'edit_account':
+        username = get_username()
         fullname = flask.request.form.get('fullname')
         email = flask.request.form.get('email')
         file = flask.request.files.get('file')
         if not fullname or not email:
             flask.abort(400)
         if file:
-            fileobj = flask.request.files["file"]
-            filename = fileobj.filename
-            stem = uuid.uuid4().hex
-            suffix = pathlib.Path(filename).suffix.lower()
-            uuid_basename = f"{stem}{suffix}"
-            path = insta485.app.config["UPLOAD_FOLDER"] / uuid_basename
-            fileobj.save(path)
-
+            uuid_basename = upload()
             connection.execute(
                 "UPDATE users SET fullname = ?, email = ?, filename = ? "
                 "WHERE username = ?",
@@ -731,9 +773,8 @@ def accounts_post():
                 (fullname, email, flask.session['username'])
             )
         return flask.redirect(target)
-    elif operation == 'update_password':
-        if 'username' not in flask.session:
-            flask.abort(403)
+    if operation == 'update_password':
+        username = get_username()
 
         password = flask.request.form.get('password')
         new_password1 = flask.request.form.get('new_password1')
@@ -741,35 +782,6 @@ def accounts_post():
 
         if not password or not new_password1 or not new_password2:
             flask.abort(400)
-        saved_password = connection.execute(
-            "SELECT password FROM users WHERE username = ?",
-            (flask.session['username'],)
-        )
-        saved_password = saved_password.fetchone()
-        if not saved_password:
-            flask.abort(404)
-        else:
-            saved_password = saved_password['password']
-        print(saved_password)
-        if saved_password != password:
-            flask.abort(403)
-        if new_password1 != new_password2:
-            flask.abort(401)
-        algorithm = 'sha512'
-        salt = uuid.uuid4().hex
-        hash_obj = hashlib.new(algorithm)
-        password_salted = salt + new_password1
-        hash_obj.update(password_salted.encode('utf-8'))
-        password_hash = hash_obj.hexdigest()
-        password_db_string = "$".join([algorithm, salt, password_hash])
-        print(password_db_string)
-
-        # Update the password in the database
-        connection.execute(
-            "UPDATE users SET password = ? WHERE username = ?",
-            (password_db_string, flask.session['username'])
-        )
-        print("End")
-        return flask.redirect(target)
-    else:
-        flask.abort(400)
+        return update(connection, password, new_password1,
+                      new_password2, target)
+    flask.abort(400)
