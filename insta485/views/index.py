@@ -269,6 +269,7 @@ def show_following(user_url_slug):
 @insta485.app.route('/posts/<postid_url_slug>/')
 def show_post(postid_url_slug):
     """Missing docstring."""
+    print("Get posts method")
     connection = insta485.model.get_db()
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
@@ -443,6 +444,7 @@ def change_password():
 @insta485.app.route('/accounts/auth/')
 def auth():
     """Missing docstring."""
+    print("Here")
     if 'username' in flask.session:
         return '', 200
     flask.abort(403)
@@ -529,6 +531,7 @@ def handle_comments():
 @insta485.app.route('/posts/', methods=['POST'])
 def handle_posts():
     """Missing docstring."""
+    print("Posts post method")
     if 'username' not in flask.session:
         return flask.redirect('/accounts/login/')
     username = flask.session['username']
@@ -537,6 +540,7 @@ def handle_posts():
     target = flask.request.args.get('target', f'/users/{username}/')
 
     connection = insta485.model.get_db()
+    print("Calling posts post")
 
     if operation == 'create':
         fileobj = flask.request.files.get("file")
@@ -555,6 +559,7 @@ def handle_posts():
             (uuid_basename, username)
         )
     elif operation == 'delete':
+        print("In delete")
         owner = connection.execute(
             "SELECT owner FROM posts WHERE postid = ?",
             (postid, )
@@ -566,16 +571,19 @@ def handle_posts():
                 "SELECT filename FROM posts WHERE postid = ?",
                 (postid, )
             )
+            print("Got til here 1")
             post = post.fetchone()
             path = insta485.app.config["UPLOAD_FOLDER"] / post['filename']
+            print("Got til here 2")
             if path.exists():
                 path.unlink()
-
             connection.execute(
                 "DELETE FROM posts WHERE postid = ?",
                 (postid, )
             )
+            print("got til here 3")
         else:
+            print("Aborting")
             flask.abort(403)
     else:
         flask.abort(400)
@@ -783,3 +791,20 @@ def accounts_post():
         return update(connection, password, new_password1,
                       new_password2, target)
     flask.abort(400)
+
+
+@insta485.app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    """Missing docstring."""
+    connection = insta485.model.get_db()
+    if 'username' not in flask.session:
+        flask.abort(403)
+    owner = connection.execute(
+        "SELECT owner FROM posts WHERE filename = ?",
+        (filename, )
+    )
+    owner = owner.fetchone()
+    if not owner:
+        flask.abort(404)
+    # Need suppose to "access the file" but I don't know what that means
+    return "1"
